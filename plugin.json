@@ -22,6 +22,12 @@
                 "help_text": "This is used to set a timer for the system to know when to go check to see if there is any new data in the subscribed rss feeds.  Defaults to 15 minutes."
             },            
             {
+                "key": "PostFilterList",
+                "display_name": "Posts to skip if the post URL contains any of the filter words (comma separated).",
+                "type": "text",
+                "help_text": "This is used to filter posts in which the post URL contains certain words. By default no words are provided."
+            },            
+            {
                 "key": "FormatTitle",
                 "display_name": "Print post title in bold",
                 "type": "bool",

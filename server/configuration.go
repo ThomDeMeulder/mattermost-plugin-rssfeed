@@ -2,6 +2,7 @@ package main
 
 import (
 	"reflect"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -27,6 +28,9 @@ type configuration struct {
 	ShowRSSItemTitle  bool
 	ShowAtomItemTitle bool
 	FormatTitle       bool
+
+	PostFilterList          string
+	postFilterListFormatted []string
 }
 
 // Clone shallow copies the configuration. Your implementation may require a deep copy if
@@ -86,7 +90,15 @@ func (p *RSSFeedPlugin) OnConfigurationChange() error {
 		return errors.Wrap(err, "failed to load plugin configuration")
 	}
 
+	formatConfigURLExclusionWords(configuration)
 	p.setConfiguration(configuration)
 
 	return nil
+}
+
+func formatConfigURLExclusionWords(config *configuration) {
+	const wordSeparatorCharacter = ","
+
+	postURLExclusionWords := strings.Split(strings.ToLower(config.PostFilterList), wordSeparatorCharacter)
+	config.postFilterListFormatted = postURLExclusionWords
 }

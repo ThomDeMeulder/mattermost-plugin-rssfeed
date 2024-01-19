@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -39,7 +39,7 @@ type RSSFeedPlugin struct {
 func (p *RSSFeedPlugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
 	switch path := r.URL.Path; path {
 	case "/images/rss.png":
-		data, err := ioutil.ReadFile(string("plugins/rssfeed/assets/rss.png"))
+		data, err := os.ReadFile(string("plugins/rssfeed/assets/rss.png"))
 		if err == nil {
 			w.Header().Set("Content-Type", "image/png")
 			w.Write(data)
@@ -103,7 +103,6 @@ func (p *RSSFeedPlugin) getHeartbeatTime() (int, error) {
 }
 
 func (p *RSSFeedPlugin) processSubscription(subscription *Subscription) error {
-
 	if len(subscription.URL) == 0 {
 		return errors.New("no url supplied")
 	}
@@ -124,6 +123,16 @@ func (p *RSSFeedPlugin) processSubscription(subscription *Subscription) error {
 	}
 
 	return nil
+}
+
+func shouldFilterPost(config *configuration, urlProvider func() string) bool {
+	for _, exclusionWord := range config.postFilterListFormatted {
+		if strings.Contains(strings.ToLower(urlProvider()), exclusionWord) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (p *RSSFeedPlugin) processRSSV2Subscription(subscription *Subscription) error {
@@ -150,6 +159,13 @@ func (p *RSSFeedPlugin) processRSSV2Subscription(subscription *Subscription) err
 	}
 
 	for _, item := range items {
+		if shouldFilterPost(config, func() string {
+			return item.Link
+		}) {
+			p.API.LogInfo(fmt.Sprintf("Rejected RSS post with link '%s' because filter was triggered.", item.Link))
+			continue
+		}
+
 		post := ""
 
 		if config.FormatTitle {
@@ -205,7 +221,17 @@ func (p *RSSFeedPlugin) processAtomSubscription(subscription *Subscription) erro
 		items = items[:1]
 	}
 
+postLoop:
 	for _, item := range items {
+		for _, link := range item.Link {
+			if shouldFilterPost(config, func() string {
+				return link.Href
+			}) {
+				p.API.LogInfo(fmt.Sprintf("Rejected Atom post with link '%s' because filter was triggered.", link.Href))
+				continue postLoop
+			}
+		}
+
 		post := ""
 
 		if config.FormatTitle {

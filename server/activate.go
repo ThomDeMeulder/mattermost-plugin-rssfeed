@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/mattermost/mattermost-server/v5/model"
-	"io/ioutil"
+	"os"
 	"path/filepath"
+
+	"github.com/mattermost/mattermost-server/v5/model"
 )
 
 const minimumServerVersion = "5.10.0"
@@ -86,7 +87,7 @@ func (p *RSSFeedPlugin) setBotProfileImage(botUserID string) *model.AppError {
 	path := filepath.Join(bundlePath, "assets", "rss.png")
 	p.API.LogDebug("Path: " + bundlePath)
 
-	profileImage, err := ioutil.ReadFile(path)
+	profileImage, err := os.ReadFile(path)
 	if err != nil {
 		p.API.LogError("Failed reading file path for " + botDisplayName + ". " + err.Error())
 		return &model.AppError{Message: err.Error()}
